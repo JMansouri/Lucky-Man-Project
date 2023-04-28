@@ -82,7 +82,7 @@ public class LobbySceneController : BaseSceneController
 		// Request Room creation to server
 		sfs.Send(new CreateRoomRequest(settings, true));
 
-        SceneManager.LoadScene("Game");
+        //SceneManager.LoadScene("Game");
     }
 
 	/**
@@ -160,13 +160,15 @@ public class LobbySceneController : BaseSceneController
 	#region
 	private void OnRoomCreationError(BaseEvent evt)
 	{
+		Debug.Log("Room creation failed: " + (string)evt.Params["errorMessage"]);
 		// Show Warning Panel prefab instance
-		warningPanel.Show("Room creation failed: " + (string)evt.Params["errorMessage"]);
+		//warningPanel.Show("Room creation failed: " + (string)evt.Params["errorMessage"]);
 	}
 
 	private void OnRoomAdded(BaseEvent evt)
 	{
 		Room room = (Room)evt.Params["room"];
+		Debug.Log($"{room.Name} room created.");
 	}
 
 	public void OnRoomRemoved(BaseEvent evt)
@@ -204,6 +206,8 @@ public class LobbySceneController : BaseSceneController
 
 	private void OnRoomJoin(BaseEvent evt)
 	{
+		Room room = (Room)evt.Params["room"];
+		Debug.Log($"Joined to room {room.Name}");
 		// Load game scene
 		SceneManager.LoadScene("Game");
 	}
