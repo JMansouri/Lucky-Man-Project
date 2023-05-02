@@ -18,6 +18,7 @@ public class GameSceneController : BaseSceneController
 	// UI elements
 	//----------------------------------------------------------
 
+	public Button startButton;
 	//public LeavePanel leavePanel;
 	//public InputField messageInput;
 	//public Text chatTextArea;
@@ -80,6 +81,11 @@ public class GameSceneController : BaseSceneController
 	/**
 	 * On public chat message input edit end, if the Enter key was pressed, send the chat message.
 	 */
+	public void OnStartButtonClick()
+	{
+
+	}
+
 	public void OnMessageInputEndEdit()
 	{
 		if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
@@ -145,7 +151,7 @@ public class GameSceneController : BaseSceneController
 	 */
 	private void StopTimeout(bool showPanel)
 	{
-		//runTimer = false;
+		runTimer = false;
 
 		//if (showPanel)
 		//	leavePanel.Show();

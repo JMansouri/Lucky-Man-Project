@@ -37,6 +37,7 @@ public class LoginSceneController : BaseSceneController
 	//----------------------------------------------------------
 
 	public TMP_InputField nameInput;
+	public TMP_InputField passInput;
 	public Button loginButton;
 	public Text errorText;
 
@@ -111,7 +112,9 @@ public class LoginSceneController : BaseSceneController
 		// Set connection parameters
 		ConfigData cfg = new ConfigData();
 		cfg.Host = host;
-		cfg.Port = tcpPort;
+		//Debug.Log(" pass = "+passInput.text);
+		//cfg.Host = passInput.text;
+        cfg.Port = tcpPort;
 		cfg.Zone = zone;
 		cfg.Debug = debug;
 

@@ -28,6 +28,6 @@ class ShowOnStart
         if (EditorPrefs.GetBool("DoNotShowSetup"))
             return;
 
-        SetupWindow.ShowWindow();
+        //SetupWindow.ShowWindow();
     }
 }
