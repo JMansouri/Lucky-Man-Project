@@ -19,13 +19,11 @@ namespace LuckyMan.Runtime
         private void OnEnable()
         {
             _uiManager.DiceButton.onClick.AddListener(PlayTurn);
-            _uiManager.PassTurnButton.onClick.AddListener(ChangeTurn);
         }
 
         private void OnDisable()
         {
             _uiManager.DiceButton.onClick.RemoveListener(PlayTurn);
-            _uiManager.PassTurnButton.onClick.RemoveListener(ChangeTurn);
         }
 
         public void PlayTurn()
@@ -41,25 +39,19 @@ namespace LuckyMan.Runtime
             // update UI:
             if (_turnManager.CurrentTurn == Turn.Me)
             {
-                _uiManager.SetMyCurrentDiceValue(turnData.CurrentDice);
+                _uiManager.SetMyLastDice(turnData.CurrentDice);
                 _uiManager.SetMyTotalPoints(turnData.DiceSum);
             }
             else if (_turnManager.CurrentTurn == Turn.Opponent)
             {
-                _uiManager.SetOpponentCurrentDiceValue(turnData.CurrentDice);
+                _uiManager.SetOpponentLastDice(turnData.CurrentDice);
                 _uiManager.SetOpponentTotalPoints(turnData.DiceSum);
             }
-
-            // enable pass turn button
-            _uiManager.EnablePassTurnButton(true);
         }
 
         public void ChangeTurn()
         {
             _turnManager.UpdateTurn();
-
-            // disable pass turn button
-            _uiManager.EnablePassTurnButton(false);
             // enable dice button
             _uiManager.EnableDiceButton(true);
         }

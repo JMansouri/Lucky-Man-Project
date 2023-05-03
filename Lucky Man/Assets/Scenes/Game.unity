@@ -135,7 +135,7 @@ GameObject:
   - component: {fileID: 124340676}
   - component: {fileID: 124340675}
   m_Layer: 5
-  m_Name: OpponentCurrentDice
+  m_Name: OpponentLastDice
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -509,16 +509,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 45546b07fb2ab0149af2b055031d2588, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _startPanel: {fileID: 1820156369}
   _diceButton: {fileID: 1222441477}
-  _passTurnButton: {fileID: 0}
+  _startButton: {fileID: 1088630694}
   _myPointsBar: {fileID: 1044889754}
   _oppPointsBar: {fileID: 835779762}
   _myName: {fileID: 565173748}
   _oppName: {fileID: 689917995}
-  _myCurrentDiceValue: {fileID: 1313329764}
-  _oppCurrentDiceValue: {fileID: 124340675}
-  _myTotalDiceValues: {fileID: 1179805768}
-  _oppTotalDiceValues: {fileID: 1928044883}
+  _myLastDice: {fileID: 1313329764}
+  _oppLastDice: {fileID: 124340675}
+  _myPoints: {fileID: 1179805768}
+  _oppPoints: {fileID: 1928044883}
+  _myNameVs: {fileID: 893056706}
+  _oppNameVs: {fileID: 1870300751}
 --- !u!1 &547431285
 GameObject:
   m_ObjectHideFlags: 0
@@ -976,7 +979,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -0.001709, y: -0.00048828}
+  m_AnchoredPosition: {x: -0.0017089844, y: -0.00048828125}
   m_SizeDelta: {x: -720.01, y: -1280}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &890350430
@@ -1766,7 +1769,7 @@ GameObject:
   - component: {fileID: 1313329765}
   - component: {fileID: 1313329764}
   m_Layer: 5
-  m_Name: MyCurrentDice
+  m_Name: MyLastDice
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2101,6 +2104,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 55802871730796509, guid: e6dbbd30dca1b8a4a9c9956dfa09c90b, type: 3}
+      propertyPath: _uiManager
+      value: 
+      objectReference: {fileID: 532483592}
+    - target: {fileID: 55802871730796509, guid: e6dbbd30dca1b8a4a9c9956dfa09c90b, type: 3}
       propertyPath: startButton
       value: 
       objectReference: {fileID: 1088630694}
@@ -2287,6 +2294,7 @@ GameObject:
   - component: {fileID: 1820156368}
   - component: {fileID: 1820156367}
   - component: {fileID: 1820156366}
+  - component: {fileID: 1820156369}
   m_Layer: 5
   m_Name: StartPanel
   m_TagString: Untagged
@@ -2382,6 +2390,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1820156364}
   m_CullTransparentMesh: 1
+--- !u!114 &1820156369
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1820156364}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b21491dbed30e46b8a8b6af4a9f1445d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1870300749
 GameObject:
   m_ObjectHideFlags: 0
@@ -2417,7 +2437,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 289.605, y: -585.07513}
+  m_AnchoredPosition: {x: 289.605, y: -585.0751}
   m_SizeDelta: {x: 324.14, y: 49.85}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1870300751

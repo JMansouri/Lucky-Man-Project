@@ -10,6 +10,7 @@ using Sfs2X.Core;
 using Sfs2X.Entities;
 using Sfs2X.Requests;
 using Sfs2X.Entities.Data;
+using LuckyMan.Runtime;
 
 /**
  * Script attached to the Controller object in the Game scene.
@@ -17,25 +18,13 @@ using Sfs2X.Entities.Data;
 public class GameSceneController : BaseSceneController
 {
     //----------------------------------------------------------
-    // UI elements
-    //----------------------------------------------------------
-
-    public Button startButton;
-    [SerializeField] private TextMeshProUGUI _myName;
-    [SerializeField] private TextMeshProUGUI _oppName;
-    //public LeavePanel leavePanel;
-    //public InputField messageInput;
-    //public Text chatTextArea;
-    //public ScrollRect chatScrollView;
-
-    //----------------------------------------------------------
     // Private properties
     //----------------------------------------------------------
 
     private SmartFox sfs;
     private bool runTimer;
     private float timer = 20;
-    private string lastSenderName;
+    [SerializeField] private UIManager _uiManager;
 
     //----------------------------------------------------------
     // Unity callback methods
@@ -46,7 +35,7 @@ public class GameSceneController : BaseSceneController
         // Set a reference to the SmartFox client instance
         sfs = gm.GetSfsClient();
 
-        // Hide modal panels
+        // Hide additional and conditional panels
         HideModals();
 
         // Print system message
@@ -62,6 +51,8 @@ public class GameSceneController : BaseSceneController
         {
             //runTimer = true;
         }
+
+        SetupGame();
     }
 
     override protected void Update()
@@ -84,37 +75,26 @@ public class GameSceneController : BaseSceneController
     // UI event listeners
     //----------------------------------------------------------
     #region
-    /**
-	 * On public chat message input edit end, if the Enter key was pressed, send the chat message.
-	 */
+
+    private void OnEnable()
+    {
+        _uiManager.StartButton.onClick.AddListener(OnStartButtonClick);
+    }
+
+    private void OnDisable()
+    {
+        _uiManager.StartButton.onClick.RemoveListener(OnStartButtonClick);
+    }
+
     public void OnStartButtonClick()
     {
         Debug.Log("Notify Server that player is ready");
-        
-            
-        
 
         ISFSObject parameters = SFSObject.NewInstance();
-        parameters.PutInt("n1", 1);
-        parameters.PutInt("n2", 2);
         sfs.Send(new ExtensionRequest("ready", parameters, sfs.JoinedRooms[0]));
 
         // hide start panel:
-
-    }
-
-    public void OnMessageInputEndEdit()
-    {
-        if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
-            SendMessage();
-    }
-
-    /**
-	 * On Send button click, send the chat message.
-	 */
-    public void OnSendButtonClick()
-    {
-        SendMessage();
+        _uiManager.HideStartPanel();
     }
 
     /**
@@ -139,7 +119,6 @@ public class GameSceneController : BaseSceneController
 	 */
     private void AddSmartFoxListeners()
     {
-        sfs.AddEventListener(SFSEvent.PUBLIC_MESSAGE, OnPublicMessage);
         sfs.AddEventListener(SFSEvent.USER_ENTER_ROOM, OnUserEnterRoom);
         sfs.AddEventListener(SFSEvent.USER_EXIT_ROOM, OnUserExitRoom);
         sfs.AddEventListener(SFSEvent.EXTENSION_RESPONSE, OnExtensionResponse);
@@ -151,10 +130,16 @@ public class GameSceneController : BaseSceneController
 	 */
     override protected void RemoveSmartFoxListeners()
     {
-        sfs.RemoveEventListener(SFSEvent.PUBLIC_MESSAGE, OnPublicMessage);
         sfs.RemoveEventListener(SFSEvent.USER_ENTER_ROOM, OnUserEnterRoom);
         sfs.RemoveEventListener(SFSEvent.USER_EXIT_ROOM, OnUserExitRoom);
         sfs.RemoveEventListener(SFSEvent.EXTENSION_RESPONSE, OnExtensionResponse);
+    }
+
+    private void SetupGame()
+    {
+        // 1. get players names
+        // 2. show start panel
+        // 3. wait for start
     }
 
     /**
@@ -179,42 +164,6 @@ public class GameSceneController : BaseSceneController
     }
 
     /**
-	 * Send a public chat message.
-	 */
-    private void SendMessage()
-    {
-        //if (messageInput.text != "")
-        //{
-        //	// Send public message to Room
-        //	sfs.Send(new PublicMessageRequest(messageInput.text));
-
-        //	// Reset message input
-        //	messageInput.text = "";
-        //	messageInput.ActivateInputField();
-        //	messageInput.Select();
-        //}
-    }
-
-    /**
-	 * Display a chat message.
-	 */
-    private void PrintChatMessage(string message, string senderName)
-    {
-        //// Print sender name, unless they are the same of the last message
-        //if (senderName != lastSenderName)
-        //	chatTextArea.text += "<b>" + (senderName == "" ? "Me" : senderName) + "</b>\n";
-
-        //// Print chat message
-        //chatTextArea.text += message + "\n";
-
-        //// Save reference to last message sender, to avoid repeating the name for subsequent messages from the same sender
-        //lastSenderName = senderName;
-
-        //// Scroll view to bottom
-        //ScrollChatToBottom();
-    }
-
-    /**
 	 * Display a system message.
 	 */
     private void PrintSystemMessage(string message)
@@ -226,14 +175,6 @@ public class GameSceneController : BaseSceneController
         //ScrollChatToBottom();
     }
 
-    /**
-     * Scroll chat to bottom.
-     */
-    private void ScrollChatToBottom()
-    {
-        //Canvas.ForceUpdateCanvases();
-        //chatScrollView.verticalNormalizedPosition = 0;
-    }
     #endregion
 
     //----------------------------------------------------------
@@ -244,7 +185,7 @@ public class GameSceneController : BaseSceneController
     {
         // Retrieve response object
         string cmd = (string)evt.Params["cmd"];
-        Debug.Log($"-- Response command : {cmd}");
+        Debug.Log($"--> Response command : {cmd}");
 
         if (cmd.Equals("start"))
         {
@@ -252,16 +193,10 @@ public class GameSceneController : BaseSceneController
             // whose turn it is
             // enable dice
         }
+        else if (cmd.Equals("update_turn"))
+        {
 
-    }
-
-    private void OnPublicMessage(BaseEvent evt)
-    {
-        User sender = (User)evt.Params["sender"];
-        string message = (string)evt.Params["message"];
-
-        // Display chat message
-        PrintChatMessage(message, sender != sfs.MySelf ? sender.Name : "");
+        }
     }
 
     private void OnUserEnterRoom(BaseEvent evt)
@@ -270,7 +205,7 @@ public class GameSceneController : BaseSceneController
         Room room = (Room)evt.Params["room"];
 
         // Display system message
-        PrintSystemMessage("User " + user.Name + " joined this game as " + (user.IsPlayerInRoom(room) ? "player" : "spectator"));
+        Debug.Log("User " + user.Name + " joined this game as " + (user.IsPlayerInRoom(room) ? "player" : "spectator"));
 
         // Stop timeout
         if (user.IsPlayerInRoom(room))
@@ -283,7 +218,7 @@ public class GameSceneController : BaseSceneController
 
         // Display system message
         if (user != sfs.MySelf)
-            PrintSystemMessage("User " + user.Name + " left the game");
+            Debug.Log("User " + user.Name + " left the game");
     }
     #endregion
 }

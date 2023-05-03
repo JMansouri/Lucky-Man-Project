@@ -31,8 +31,7 @@ public class LobbySceneController : BaseSceneController
     // Private properties
     //----------------------------------------------------------
 
-    private SmartFox sfs;
-    private Dictionary<int, GameListItem> gameListItems;
+    private SmartFox sfs;    
     private bool searchForMatch = false;
 
     //----------------------------------------------------------
@@ -152,22 +151,6 @@ public class LobbySceneController : BaseSceneController
     public void OnRoomRemoved(BaseEvent evt)
     {
         Room room = (Room)evt.Params["room"];
-
-        // Get reference to game list item corresponding to Room
-        gameListItems.TryGetValue(room.Id, out GameListItem gameListItem);
-
-        // Remove game list item
-        if (gameListItem != null)
-        {
-            // Remove listeners
-            gameListItem.playButton.onClick.RemoveAllListeners();
-
-            // Remove game list item from dictionary
-            gameListItems.Remove(room.Id);
-
-            // Destroy game object
-            GameObject.Destroy(gameListItem.gameObject);
-        }
     }
 
     public void OnUserCountChanged(BaseEvent evt)
