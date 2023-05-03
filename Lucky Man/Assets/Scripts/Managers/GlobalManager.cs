@@ -9,16 +9,17 @@ using UnityEditor.SceneManagement;
 using Sfs2X;
 using Sfs2X.Core;
 using Sfs2X.Util;
+using Sfs2X.Entities;
 
 #if UNITY_EDITOR
 //[InitializeOnLoad]
 //public class UnityEditorStartSceneSetter
 //{
-    //static UnityEditorStartSceneSetter()
-    //{
-        // In Unity Editor, set Play Mode scene to LOGIN scene
-        //EditorSceneManager.playModeStartScene = AssetDatabase.LoadAssetAtPath<SceneAsset>("Assets/Scenes/Login.unity");
-    //}
+//static UnityEditorStartSceneSetter()
+//{
+// In Unity Editor, set Play Mode scene to LOGIN scene
+//EditorSceneManager.playModeStartScene = AssetDatabase.LoadAssetAtPath<SceneAsset>("Assets/Scenes/Login.unity");
+//}
 //}
 #endif
 
@@ -49,7 +50,7 @@ public class GlobalManager : MonoBehaviour
 
     private SmartFox sfs;
     private string connLostMsg;
-
+     
     //----------------------------------------------------------
     // Unity callback methods
     //----------------------------------------------------------

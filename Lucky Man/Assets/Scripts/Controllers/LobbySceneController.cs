@@ -76,17 +76,7 @@ public class LobbySceneController : BaseSceneController
     public void OnStartGameButtonClick()
     {
         sfs.Send(new JoinRoomRequest("Lobby"));
-        // deactive find match button
-
-        //Debug.Log("Finding game ...");
-        //// Send find match request to Extension controller in server
-        //ISFSObject parameters = SFSObject.NewInstance();
-        //int n1 = Random.Range(0, 100);
-        //int n2 = Random.Range(0, 100);
-        //parameters.PutInt("n1", n1);
-        //parameters.PutInt("n2", n2);
-
-        //sfs.Send(new ExtensionRequest("find_match", parameters));
+        // deactive find match button        
     }
 
     /**
@@ -190,11 +180,6 @@ public class LobbySceneController : BaseSceneController
     {
         Room room = (Room)evt.Params["room"];
         Debug.Log($"Joined {room.Name} room");
-        if (room.IsGame)
-        {
-            SceneManager.LoadScene("Game");
-            return;
-        }
 
         if (room.UserCount == 1)
         {
@@ -206,11 +191,13 @@ public class LobbySceneController : BaseSceneController
     private void OnExtensionResponse(BaseEvent evt)
     {
         // Retrieve response object
-        string cmd = (string)evt.Params["cmd"];
-        Debug.Log($"-- Response command : {cmd}");
 
+        string cmd = (string)evt.Params["cmd"];
         if (cmd.Equals("found_match"))
         {
+            ISFSObject responseParams = (SFSObject)evt.Params["params"];
+            int id = responseParams.GetInt("room_id");
+            Debug.Log(" Room ID : " + id + " ____ Name : " + sfs.GetRoomById(id));
             SceneManager.LoadScene("Game");
         }
 

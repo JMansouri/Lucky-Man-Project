@@ -18,7 +18,7 @@ namespace LuckyMan.Runtime
         public TurnData HandleTurn()
         {
             // 1. read dice value:
-            _currentDiceValue = DiceSimulator.GetRandomDiceNumber();
+            _currentDiceValue = 6;
 
             // 2.add the dice value to the total dice values in this match:
             _diceValuesSum += _currentDiceValue;
