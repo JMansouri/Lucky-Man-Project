@@ -11,6 +11,8 @@ using Sfs2X.Entities;
 using Sfs2X.Requests;
 using Sfs2X.Entities.Data;
 using LuckyMan.Runtime;
+using System.Linq;
+using System.Security.Cryptography;
 
 /**
  * Script attached to the Controller object in the Game scene.
@@ -24,6 +26,7 @@ public class GameSceneController : BaseSceneController
     private SmartFox sfs;
     private bool runTimer;
     private float timer = 20;
+    [SerializeField] private GameManager _gameManager;
     [SerializeField] private UIManager _uiManager;
 
     //----------------------------------------------------------
@@ -72,45 +75,6 @@ public class GameSceneController : BaseSceneController
     }
 
     //----------------------------------------------------------
-    // UI event listeners
-    //----------------------------------------------------------
-    #region
-
-    private void OnEnable()
-    {
-        _uiManager.StartButton.onClick.AddListener(OnStartButtonClick);
-    }
-
-    private void OnDisable()
-    {
-        _uiManager.StartButton.onClick.RemoveListener(OnStartButtonClick);
-    }
-
-    public void OnStartButtonClick()
-    {
-        Debug.Log("Notify Server that player is ready");
-
-        ISFSObject parameters = SFSObject.NewInstance();
-        sfs.Send(new ExtensionRequest("ready", parameters, sfs.JoinedRooms[0]));
-
-        // hide start panel:
-        _uiManager.HideStartPanel();
-    }
-
-    /**
-	 * On Leave button click, go back to Login scene.
-	 */
-    public void OnLeaveButtonClick()
-    {
-        // Leave current game room
-        sfs.Send(new LeaveRoomRequest());
-
-        // Return to lobby scene
-        SceneManager.LoadScene("Lobby");
-    }
-    #endregion
-
-    //----------------------------------------------------------
     // Helper methods
     //----------------------------------------------------------
     #region
@@ -137,9 +101,16 @@ public class GameSceneController : BaseSceneController
 
     private void SetupGame()
     {
-        // 1. get players names
-        // 2. show start panel
-        // 3. wait for start
+        _gameManager = new GameManager();
+
+        _gameManager.MyPlayerId = sfs.MySelf.PlayerId;
+        var opp = sfs.LastJoinedRoom.UserList.First(u => u.PlayerId != _gameManager.MyPlayerId);
+        _gameManager.OppPlayerId = opp.PlayerId;
+
+        var myName = sfs.MySelf.Name;
+        var oppName = opp.Name;
+        _uiManager.SetNames(myName, oppName);
+        _uiManager.EnableDiceButton(false);
     }
 
     /**
@@ -178,24 +149,96 @@ public class GameSceneController : BaseSceneController
     #endregion
 
     //----------------------------------------------------------
+    // UI event listeners
+    //----------------------------------------------------------
+    #region
+
+    private void OnEnable()
+    {
+        _uiManager.StartButton.onClick.AddListener(OnStartButtonClick);
+        _uiManager.DiceButton.onClick.AddListener(OnDiceClick);
+    }
+
+    private void OnDisable()
+    {
+        _uiManager.StartButton.onClick.RemoveListener(OnStartButtonClick);
+        _uiManager.DiceButton.onClick.RemoveListener(OnDiceClick);
+    }
+
+    public void OnStartButtonClick()
+    {
+        // hide start panel:
+        _uiManager.HideStartPanel();
+
+        ISFSObject parameters = SFSObject.NewInstance();
+        sfs.Send(new ExtensionRequest("ready", parameters, sfs.JoinedRooms[0]));
+    }
+
+    public void OnDiceClick()
+    {
+        Debug.Log("Clicekd on Dice");
+        _uiManager.EnableDiceButton(false);
+        ISFSObject parameters = SFSObject.NewInstance();
+        sfs.Send(new ExtensionRequest("dice", parameters, sfs.JoinedRooms[0]));
+    }
+
+    /**
+	 * On Leave button click, go back to Login scene.
+	 */
+    public void OnLeaveButtonClick()
+    {
+        // Leave current game room
+        sfs.Send(new LeaveRoomRequest());
+
+        // Return to lobby scene
+        SceneManager.LoadScene("Lobby");
+    }
+    #endregion
+
+    //----------------------------------------------------------
     // SmartFoxServer event listeners
     //----------------------------------------------------------
     #region
     private void OnExtensionResponse(BaseEvent evt)
     {
-        // Retrieve response object
         string cmd = (string)evt.Params["cmd"];
         Debug.Log($"--> Response command : {cmd}");
 
         if (cmd.Equals("start"))
         {
-            Debug.Log("# Start playing !");
-            // whose turn it is
-            // enable dice
+            ISFSObject responseParams = (SFSObject)evt.Params["params"];
+            int id = responseParams.GetInt("turn");
+
+            _gameManager.InitializeGame(id);
+            if (_gameManager.IsMyTurn())
+            {
+                _uiManager.EnableDiceButton(true);
+            }
         }
         else if (cmd.Equals("update_turn"))
         {
+            Debug.Log("Update turn, it was " + (_gameManager.IsMyTurn() ? "My" : "Opp") + " turn");
+            ISFSObject responseParams = (SFSObject)evt.Params["params"];
 
+            int dice = responseParams.GetInt("dice");
+            TurnData data = _gameManager.UpdateState(dice);
+
+            if (_gameManager.IsMyTurn())
+            {
+                _uiManager.UpdateMyUI(data);
+            }
+            else
+            {
+                _uiManager.UpdateOppUI(data);
+            }
+
+            int id = responseParams.GetInt("next_turn");
+            _gameManager.UpdateTurn(id);
+
+            if (_gameManager.IsMyTurn())
+            {
+                _uiManager.EnableDiceButton(true);
+            }
         }
     }
 

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -37,36 +38,40 @@ namespace LuckyMan.Runtime
         [SerializeField] private TextMeshProUGUI _myNameVs;
         [SerializeField] private TextMeshProUGUI _oppNameVs;
 
-        public void SetMyLastDice(int diceNumber)
-        {
-            _myLastDice.text = "Dice : " + diceNumber.ToString();
-        }
-
-        public void SetOpponentLastDice(int diceNumber)
-        {
-            _oppLastDice.text = "Dice : " + diceNumber.ToString();
-        }
-
-        public void SetMyTotalPoints(int totalPoints)
-        {
-            _myPoints.text = totalPoints.ToString();
-            _myPointsBar.fillAmount = (float)totalPoints / 50f;
-        }
-
-        public void SetOpponentTotalPoints(int totalPoints)
-        {
-            _oppPoints.text = totalPoints.ToString();
-            _oppPointsBar.fillAmount = (float)totalPoints / 50f;
-        }
-
         public void EnableDiceButton(bool status)
         {
             _diceButton.enabled = status;
         }
 
+        public void SetNames(string myName, string oppName)
+        {
+            _myNameVs.text = myName;
+            _oppNameVs.text = oppName;
+            _myName.text = myName;
+            _oppName.text = oppName;
+        }
+
         public void HideStartPanel()
         {
             _startPanel.Hide();
+        }
+
+        internal void UpdateMyUI(TurnData data)
+        {
+            _myLastDice.text = "Dice : " + data.CurrentDice;
+            _myPoints.text = data.DiceSum.ToString();
+
+            // animate the points bar fill
+            _myPointsBar.fillAmount = (float)data.DiceSum / 50f;
+        }
+
+        internal void UpdateOppUI(TurnData data)
+        {
+            _oppLastDice.text = "Dice : " + data.CurrentDice;
+            _oppPoints.text = data.DiceSum.ToString();
+
+            // animate
+            _oppPointsBar.fillAmount = (float)data.DiceSum / 50f;
         }
     }
 }

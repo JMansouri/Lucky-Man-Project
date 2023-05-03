@@ -1,59 +1,75 @@
+using LuckyMan.Runtime;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace LuckyMan.Runtime
 {
-    [RequireComponent(typeof(TurnManager))]
-    public class GameManager : MonoBehaviour
+    public class GameManager
     {
-        private TurnManager _turnManager;
-        [SerializeField] private UIManager _uiManager;
+        public int MyPlayerId { get; set; }
+        public int OppPlayerId { get; set; }
 
-        private void Awake()
+        private PlayerState _myState;
+        private PlayerState _oppState;
+
+        private Turn _currentTurn = Turn.Neither;
+        public Turn CurrentTurn => _currentTurn;
+
+
+        public void InitializeGame(int startingPlayerId)
         {
-            _turnManager = GetComponent<TurnManager>();
-            _turnManager.InitializeTurns(Turn.Me);
+            _myState = new PlayerState();
+            _oppState = new PlayerState();
+            _myState.ResetState();
+            _oppState.ResetState();
+
+            UpdateTurn(startingPlayerId);
         }
 
-        private void OnEnable()
+        public TurnData UpdateState(int dice)
         {
-            _uiManager.DiceButton.onClick.AddListener(PlayTurn);
-        }
-
-        private void OnDisable()
-        {
-            _uiManager.DiceButton.onClick.RemoveListener(PlayTurn);
-        }
-
-        public void PlayTurn()
-        {
-            // disable dice button
-            _uiManager.EnableDiceButton(false);
-
-            // TODO: show dice animation
-
-            TurnData turnData = _turnManager.HandleCurrentTurn();
-            Debug.Log(" dice : " + turnData.CurrentDice + " total : " + turnData.DiceSum);
-
-            // update UI:
-            if (_turnManager.CurrentTurn == Turn.Me)
+            if (IsMyTurn())
             {
-                _uiManager.SetMyLastDice(turnData.CurrentDice);
-                _uiManager.SetMyTotalPoints(turnData.DiceSum);
+                return _myState.UpdateState(dice);
             }
-            else if (_turnManager.CurrentTurn == Turn.Opponent)
+            else if (_currentTurn == Turn.Opponent)
             {
-                _uiManager.SetOpponentLastDice(turnData.CurrentDice);
-                _uiManager.SetOpponentTotalPoints(turnData.DiceSum);
+                return _oppState.UpdateState(dice);
+            }
+            else
+            {
+                Debug.Log("There is a problem with turns in update state!");
+                return new TurnData();
             }
         }
 
-        public void ChangeTurn()
+        public void UpdateTurn(int playerId)
         {
-            _turnManager.UpdateTurn();
-            // enable dice button
-            _uiManager.EnableDiceButton(true);
+            if (playerId == MyPlayerId)
+            {
+                _currentTurn = Turn.Me;
+            }
+            else if (playerId == OppPlayerId)
+            {
+                _currentTurn = Turn.Opponent;
+            }
+            else
+            {
+                Debug.Log("There is a problem in update turn, player id wont match!");
+            }
         }
+
+        public bool IsMyTurn()
+        {
+            return _currentTurn == Turn.Me;
+        }
+    }
+
+    public enum Turn
+    {
+        Me,
+        Opponent,
+        Neither
     }
 }
