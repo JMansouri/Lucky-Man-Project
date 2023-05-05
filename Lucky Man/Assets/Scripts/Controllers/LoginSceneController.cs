@@ -28,7 +28,7 @@ public class LoginSceneController : BaseSceneController
     public int httpPort = 8080;
 
     [Tooltip("Name of the SmartFoxServer Zone to join")]
-    public string zone = "BasicExamples";
+    public string zone = "LuckyMan";
 
     [Tooltip("Display SmartFoxServer client debug messages")]
     public bool debug = false;
@@ -43,14 +43,16 @@ public class LoginSceneController : BaseSceneController
     public TMP_InputField signupPassInput;
     public Button loginButton;
     public Button showSignupButton;
-    public Text errorText;
+    public Text loginInfo;
+    public BasePanel signupPanel;
+    public TextMeshProUGUI signupInfo;
 
     //----------------------------------------------------------
     // Private properties
     //----------------------------------------------------------
 
-    private SmartFox sfs;
-    private bool isSignup = false;
+    private SmartFox _sfs;
+    private bool _isSignup = false;
 
     //----------------------------------------------------------
     // Unity calback methods
@@ -65,7 +67,7 @@ public class LoginSceneController : BaseSceneController
         // Show connection lost message, in case the disconnection occurred in another scene
         string connLostMsg = gm.ConnectionLostMessage;
         if (connLostMsg != null)
-            errorText.text = connLostMsg;
+            loginInfo.text = connLostMsg;
     }
 
     //----------------------------------------------------------
@@ -89,10 +91,16 @@ public class LoginSceneController : BaseSceneController
         Connect();
     }
 
+    public void OnShowSignupButtonClick()
+    {
+        // show signup panel
+        signupPanel.Show();
+    }
+
     public void OnSignupButtonClick()
     {
+        _isSignup = true;
         Connect();
-        isSignup = true;
     }
     #endregion
 
@@ -122,7 +130,7 @@ public class LoginSceneController : BaseSceneController
         EnableUI(false);
 
         // Clear any previour error message
-        errorText.text = "";
+        loginInfo.text = "";
 
         // Set connection parameters
         ConfigData cfg = new ConfigData();
@@ -146,19 +154,19 @@ public class LoginSceneController : BaseSceneController
         // The singleton class GlobalManager holds a reference to the SmartFox class instance,
         // so that it can be shared among all the scenes
 #if !UNITY_WEBGL
-        sfs = gm.CreateSfsClient();
+        _sfs = gm.CreateSfsClient();
 #else
 		sfs = gm.CreateSfsClient(UseWebSocket.WS_BIN);
 #endif
 
         // Configure SmartFox internal logger
-        sfs.Logger.EnableConsoleTrace = debug;
+        _sfs.Logger.EnableConsoleTrace = debug;
 
         // Add event listeners
         AddSmartFoxListeners();
 
         // Connect to SmartFoxServer
-        sfs.Connect(cfg);
+        _sfs.Connect(cfg);
     }
 
     /**
@@ -166,10 +174,10 @@ public class LoginSceneController : BaseSceneController
 	 */
     private void AddSmartFoxListeners()
     {
-        sfs.AddEventListener(SFSEvent.CONNECTION, OnConnection);
-        sfs.AddEventListener(SFSEvent.CONNECTION_LOST, OnConnectionLost);
-        sfs.AddEventListener(SFSEvent.LOGIN, OnLogin);
-        sfs.AddEventListener(SFSEvent.LOGIN_ERROR, OnLoginError);
+        _sfs.AddEventListener(SFSEvent.CONNECTION, OnConnection);
+        _sfs.AddEventListener(SFSEvent.CONNECTION_LOST, OnConnectionLost);
+        _sfs.AddEventListener(SFSEvent.LOGIN, OnLogin);
+        _sfs.AddEventListener(SFSEvent.LOGIN_ERROR, OnLoginError);
     }
 
     /**
@@ -182,12 +190,12 @@ public class LoginSceneController : BaseSceneController
         // If this scene is stopped before a connection is established, the SmartFox client instance
         // could still be null, causing an error when trying to remove its listeners
 
-        if (sfs != null)
+        if (_sfs != null)
         {
-            sfs.RemoveEventListener(SFSEvent.CONNECTION, OnConnection);
-            sfs.RemoveEventListener(SFSEvent.CONNECTION_LOST, OnConnectionLost);
-            sfs.RemoveEventListener(SFSEvent.LOGIN, OnLogin);
-            sfs.RemoveEventListener(SFSEvent.LOGIN_ERROR, OnLoginError);
+            _sfs.RemoveEventListener(SFSEvent.CONNECTION, OnConnection);
+            _sfs.RemoveEventListener(SFSEvent.CONNECTION_LOST, OnConnectionLost);
+            _sfs.RemoveEventListener(SFSEvent.LOGIN, OnLogin);
+            _sfs.RemoveEventListener(SFSEvent.LOGIN_ERROR, OnLoginError);
         }
     }
 
@@ -209,26 +217,30 @@ public class LoginSceneController : BaseSceneController
         // Check if the conenction was established or not
         if ((bool)evt.Params["success"])
         {
-            Debug.Log("SFS2X API version: " + sfs.Version);
-            Debug.Log("Connection mode is: " + sfs.ConnectionMode);
+            Debug.Log("SFS2X API version: " + _sfs.Version);
+            Debug.Log("Connection mode is: " + _sfs.ConnectionMode);
 
-            if (!isSignup)
+            ISFSObject parameters = SFSObject.NewInstance();
+            parameters.PutBool("sign_up", _isSignup);
+
+            if (!_isSignup)
             {
                 // Login
-                sfs.Send(new LoginRequest(nameInput.text, passInput.text));
+                _sfs.Send(new LoginRequest
+                    (nameInput.text, passInput.text, zone, parameters));
             }
             else
             {
-                ISFSObject parameters = SFSObject.NewInstance();
-                parameters.PutUtfString("name",signupNameInput.text);
-                parameters.PutUtfString("password",signupPassInput.text);
-                sfs.Send(new ExtensionRequest("sign_up",parameters));
+                // Signup
+                parameters.PutUtfString("password", signupPassInput.text);
+                _sfs.Send(new LoginRequest
+                    (signupNameInput.text, signupPassInput.text, zone, parameters));
             }
         }
         else
         {
             // Show error message
-            errorText.text = "Connection failed; is the server running at all?";
+            loginInfo.text = "Connection failed; is the server running at all?";
 
             // Enable user interface
             EnableUI(true);
@@ -237,6 +249,7 @@ public class LoginSceneController : BaseSceneController
 
     private void OnConnectionLost(BaseEvent evt)
     {
+        _isSignup = false;
         // Remove SFS listeners
         RemoveSmartFoxListeners();
 
@@ -244,7 +257,7 @@ public class LoginSceneController : BaseSceneController
         string reason = (string)evt.Params["reason"];
 
         if (reason != ClientDisconnectionReason.MANUAL)
-            errorText.text = "Connection lost; reason is: " + reason;
+            loginInfo.text = "Connection lost; reason is: " + reason;
 
         // Enable user interface
         EnableUI(true);
@@ -252,18 +265,29 @@ public class LoginSceneController : BaseSceneController
 
     private void OnLogin(BaseEvent evt)
     {
-        // Load lobby scene
-        SceneManager.LoadScene("Lobby");
+        if (_isSignup)
+        {
+            _sfs.Disconnect();
+            _isSignup = false;
+            signupPanel.Hide();
+            loginInfo.text = "Successful Sign Up! Now Login with your account";
+        }
+        else
+        {
+            // Load lobby scene
+            SceneManager.LoadScene("Lobby");
+        }
     }
 
     private void OnLoginError(BaseEvent evt)
     {
+        _isSignup = false;
         // Disconnect
         // NOTE: this causes a CONNECTION_LOST event with reason "manual", which in turn removes all SFS listeners
-        sfs.Disconnect();
+        _sfs.Disconnect();
 
         // Show error message
-        errorText.text = "Login failed due to the following error:\n" + (string)evt.Params["errorMessage"];
+        loginInfo.text = "Login failed due to the following error:\n" + (string)evt.Params["errorMessage"];
 
         // Enable user interface
         EnableUI(true);

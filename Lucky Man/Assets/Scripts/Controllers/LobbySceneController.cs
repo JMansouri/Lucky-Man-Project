@@ -173,8 +173,6 @@ public class LobbySceneController : BaseSceneController
 
     private void OnExtensionResponse(BaseEvent evt)
     {
-        // Retrieve response object
-
         string cmd = (string)evt.Params["cmd"];
         if (cmd.Equals("found_match"))
         {
@@ -183,7 +181,6 @@ public class LobbySceneController : BaseSceneController
             Debug.Log(" Room ID : " + id + " ____ Name : " + sfs.GetRoomById(id));
             SceneManager.LoadScene("Game");
         }
-
     }
 
     private void JoinOrCreateGameRoom()
