@@ -240,6 +240,19 @@ public class GameSceneController : BaseSceneController
                 _uiManager.EnableDiceButton(true);
             }
         }
+        else if (cmd.Equals("over"))
+        {
+            ISFSObject responseParams = (SFSObject)evt.Params["params"];
+
+            int winnerId = responseParams.GetInt("winner");
+            if(_gameManager.MyPlayerId == winnerId)
+            {
+                Debug.Log("Winner is me , Yay ++++++++++++++++++++++");
+            }else if(_gameManager.OppPlayerId == winnerId)
+            {
+                Debug.Log("Winner is opp , eshhh -------------------");
+            }
+        }
     }
 
     private void OnUserEnterRoom(BaseEvent evt)

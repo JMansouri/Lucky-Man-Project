@@ -7,6 +7,7 @@ using Sfs2X;
 using Sfs2X.Core;
 using Sfs2X.Requests;
 using Sfs2X.Util;
+using Sfs2X.Entities.Data;
 
 /**
  * Script attached to the Controller object in the Login scene.
@@ -38,7 +39,10 @@ public class LoginSceneController : BaseSceneController
 
     public TMP_InputField nameInput;
     public TMP_InputField passInput;
+    public TMP_InputField signupNameInput;
+    public TMP_InputField signupPassInput;
     public Button loginButton;
+    public Button showSignupButton;
     public Text errorText;
 
     //----------------------------------------------------------
@@ -46,6 +50,7 @@ public class LoginSceneController : BaseSceneController
     //----------------------------------------------------------
 
     private SmartFox sfs;
+    private bool isSignup = false;
 
     //----------------------------------------------------------
     // Unity calback methods
@@ -83,6 +88,12 @@ public class LoginSceneController : BaseSceneController
     {
         Connect();
     }
+
+    public void OnSignupButtonClick()
+    {
+        Connect();
+        isSignup = true;
+    }
     #endregion
 
     //----------------------------------------------------------
@@ -95,7 +106,11 @@ public class LoginSceneController : BaseSceneController
     private void EnableUI(bool enable)
     {
         nameInput.interactable = enable;
+        passInput.interactable = enable;
         loginButton.interactable = enable;
+        showSignupButton.interactable = enable;
+        signupNameInput.interactable = enable;
+        signupPassInput.interactable = enable;
     }
 
     /**
@@ -197,8 +212,18 @@ public class LoginSceneController : BaseSceneController
             Debug.Log("SFS2X API version: " + sfs.Version);
             Debug.Log("Connection mode is: " + sfs.ConnectionMode);
 
-            // Login
-            sfs.Send(new LoginRequest(nameInput.text));
+            if (!isSignup)
+            {
+                // Login
+                sfs.Send(new LoginRequest(nameInput.text, passInput.text));
+            }
+            else
+            {
+                ISFSObject parameters = SFSObject.NewInstance();
+                parameters.PutUtfString("name",signupNameInput.text);
+                parameters.PutUtfString("password",signupPassInput.text);
+                sfs.Send(new ExtensionRequest("sign_up",parameters));
+            }
         }
         else
         {
