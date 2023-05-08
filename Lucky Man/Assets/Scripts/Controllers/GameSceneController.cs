@@ -1,9 +1,7 @@
-using System;
+﻿using System;
 
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.SceneManagement;
-using TMPro;
 
 using Sfs2X;
 using Sfs2X.Core;
@@ -12,7 +10,6 @@ using Sfs2X.Requests;
 using Sfs2X.Entities.Data;
 using LuckyMan.Runtime;
 using System.Linq;
-using System.Security.Cryptography;
 
 /**
  * Script attached to the Controller object in the Game scene.
@@ -86,6 +83,9 @@ public class GameSceneController : BaseSceneController
         sfs.AddEventListener(SFSEvent.USER_ENTER_ROOM, OnUserEnterRoom);
         sfs.AddEventListener(SFSEvent.USER_EXIT_ROOM, OnUserExitRoom);
         sfs.AddEventListener(SFSEvent.EXTENSION_RESPONSE, OnExtensionResponse);
+        sfs.AddEventListener(SFSEvent.CONNECTION_LOST, OnTestEvents);
+        sfs.AddEventListener(SFSEvent.USER_COUNT_CHANGE, OnTestEvents);
+
     }
 
     /**
@@ -97,6 +97,8 @@ public class GameSceneController : BaseSceneController
         sfs.RemoveEventListener(SFSEvent.USER_ENTER_ROOM, OnUserEnterRoom);
         sfs.RemoveEventListener(SFSEvent.USER_EXIT_ROOM, OnUserExitRoom);
         sfs.RemoveEventListener(SFSEvent.EXTENSION_RESPONSE, OnExtensionResponse);
+        sfs.RemoveEventListener(SFSEvent.CONNECTION_LOST, OnTestEvents);
+        sfs.RemoveEventListener(SFSEvent.USER_COUNT_CHANGE, OnTestEvents);
     }
 
     private void SetupGame()
@@ -157,18 +159,20 @@ public class GameSceneController : BaseSceneController
     {
         _uiManager.StartButton.onClick.AddListener(OnStartButtonClick);
         _uiManager.DiceButton.onClick.AddListener(OnDiceClick);
+        _uiManager.ReturnButton.onClick.AddListener(OnReturnButtonClick);
     }
 
     private void OnDisable()
     {
         _uiManager.StartButton.onClick.RemoveListener(OnStartButtonClick);
         _uiManager.DiceButton.onClick.RemoveListener(OnDiceClick);
+        _uiManager.ReturnButton.onClick.RemoveListener(OnReturnButtonClick);
     }
 
     public void OnStartButtonClick()
     {
-        // hide start panel:
-        _uiManager.HideStartPanel();
+        // hide start button and  show waiting for opp
+        _uiManager.ShowWaitingForOpponent();
 
         ISFSObject parameters = SFSObject.NewInstance();
         sfs.Send(new ExtensionRequest("ready", parameters, sfs.JoinedRooms[0]));
@@ -176,16 +180,12 @@ public class GameSceneController : BaseSceneController
 
     public void OnDiceClick()
     {
-        Debug.Log("Clicekd on Dice");
         _uiManager.EnableDiceButton(false);
         ISFSObject parameters = SFSObject.NewInstance();
         sfs.Send(new ExtensionRequest("dice", parameters, sfs.JoinedRooms[0]));
     }
 
-    /**
-	 * On Leave button click, go back to Login scene.
-	 */
-    public void OnLeaveButtonClick()
+    public void OnReturnButtonClick()
     {
         // Leave current game room
         sfs.Send(new LeaveRoomRequest());
@@ -206,18 +206,28 @@ public class GameSceneController : BaseSceneController
 
         if (cmd.Equals("start"))
         {
+            _uiManager.HideStartPanel();
+
+            // show name labels and points bar
+            _uiManager.ShowGameUI(show: true);
+
             ISFSObject responseParams = (SFSObject)evt.Params["params"];
             int id = responseParams.GetInt("turn");
 
             _gameManager.InitializeGame(id);
             if (_gameManager.IsMyTurn())
             {
+                // show something to indicate that
+                _uiManager.ShowStartIndicator(myTurn: true);
                 _uiManager.EnableDiceButton(true);
+            }
+            else
+            {
+                _uiManager.ShowStartIndicator(myTurn: false);
             }
         }
         else if (cmd.Equals("update_turn"))
         {
-            Debug.Log("Update turn, it was " + (_gameManager.IsMyTurn() ? "My" : "Opp") + " turn");
             ISFSObject responseParams = (SFSObject)evt.Params["params"];
 
             int dice = responseParams.GetInt("dice");
@@ -245,12 +255,26 @@ public class GameSceneController : BaseSceneController
             ISFSObject responseParams = (SFSObject)evt.Params["params"];
 
             int winnerId = responseParams.GetInt("winner");
-            if(_gameManager.MyPlayerId == winnerId)
+            int lastDice = responseParams.GetInt("last_dice");
+
+            TurnData data = _gameManager.UpdateState(lastDice);
+
+            if (_gameManager.IsMyTurn())
             {
-                Debug.Log("Winner is me , Yay ++++++++++++++++++++++");
-            }else if(_gameManager.OppPlayerId == winnerId)
+                _uiManager.UpdateMyUI(data);
+            }
+            else
             {
-                Debug.Log("Winner is opp , eshhh -------------------");
+                _uiManager.UpdateOppUI(data);
+            }
+
+            if (_gameManager.MyPlayerId == winnerId)
+            {
+                _uiManager.ShowGameOverPanel(true, "شما برنده شدید");
+            }
+            else if (_gameManager.OppPlayerId == winnerId)
+            {
+                _uiManager.ShowGameOverPanel(true, "شما باختید");
             }
         }
     }
@@ -275,6 +299,11 @@ public class GameSceneController : BaseSceneController
         // Display system message
         if (user != sfs.MySelf)
             Debug.Log("User " + user.Name + " left the game");
+    }
+
+    private void OnTestEvents(BaseEvent evt)
+    {
+        Debug.Log("Event fired. Name : " + evt.Type);
     }
     #endregion
 }

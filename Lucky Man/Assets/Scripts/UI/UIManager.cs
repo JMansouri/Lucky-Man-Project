@@ -15,6 +15,8 @@ namespace LuckyMan.Runtime
 
         // ui panels
         [SerializeField] private BasePanel _startPanel;
+        [SerializeField] private BasePanel _gameUIPanel;
+        [SerializeField] private BasePanel _gameOverPanel;
         //public LeavePanel leavePanel;
         //public Text chatTextArea;
 
@@ -23,6 +25,8 @@ namespace LuckyMan.Runtime
         public Button DiceButton => _diceButton;
         [SerializeField] private Button _startButton;
         public Button StartButton => _startButton;
+        [SerializeField] private Button _returnToLobbyButton;
+        public Button ReturnButton => _returnToLobbyButton;
 
         // ui changeble images
         [SerializeField] private Image _myPointsBar;
@@ -37,6 +41,9 @@ namespace LuckyMan.Runtime
         [SerializeField] private TextMeshProUGUI _oppPoints;
         [SerializeField] private TextMeshProUGUI _myNameVs;
         [SerializeField] private TextMeshProUGUI _oppNameVs;
+        [SerializeField] private TextMeshProUGUI _gameOverText;
+        [SerializeField] private TextMeshProUGUI _waitingForOppText;
+        [SerializeField] private TextMeshProUGUI _startingIndicator;
 
         public void EnableDiceButton(bool status)
         {
@@ -51,9 +58,27 @@ namespace LuckyMan.Runtime
             _oppName.text = oppName;
         }
 
+        public void ShowWaitingForOpponent()
+        {
+            _startButton.gameObject.SetActive(false);
+            _waitingForOppText.gameObject.SetActive(true);
+        }
+
         public void HideStartPanel()
         {
             _startPanel.Hide();
+        }
+
+        public void ShowGameOverPanel(bool show, string gameOverText)
+        {
+            if (show)
+            {
+                _gameOverText.text = gameOverText;
+                _gameOverPanel.Show();
+            } else
+            {
+                _gameOverPanel.Hide();
+            }
         }
 
         internal void UpdateMyUI(TurnData data)
@@ -72,6 +97,36 @@ namespace LuckyMan.Runtime
 
             // animate
             _oppPointsBar.fillAmount = (float)data.DiceSum / 50f;
+        }
+
+        internal void ShowGameUI(bool show)
+        {
+            if (show)
+            {
+                _gameUIPanel.Show();
+            }
+            else
+            {
+                _gameUIPanel.Hide();
+            }
+        }
+
+        internal void ShowStartIndicator(bool myTurn)
+        {
+            //StartCoroutine(ShowIndicator());
+        }
+
+        IEnumerator ShowIndicator()
+        {
+            _startingIndicator.fontSize = 50f;
+            _startingIndicator.gameObject.SetActive(true);
+            while (_startingIndicator.fontSize <= 65f)
+            {
+                _startingIndicator.fontSize += 0.5f;
+                yield return new WaitForSeconds(0.15f);
+            }
+            _startingIndicator.gameObject.SetActive(false);
+            //EnableDiceButton(true);
         }
     }
 }

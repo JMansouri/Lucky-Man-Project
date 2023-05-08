@@ -88,20 +88,54 @@ public class LoginSceneController : BaseSceneController
 	 */
     public void OnLoginButtonClick()
     {
-        Connect();
+        if (CheckLoginInputs())
+        {
+            Connect();
+        }
+    }
+
+    private bool CheckLoginInputs()
+    {
+        if (nameInput.text.Length < 1 || passInput.text.Length < 1)
+        {
+            loginInfo.text = "Username and password cant be empty!";
+            return false;
+        }
+        return true;
     }
 
     public void OnShowSignupButtonClick()
     {
         // show signup panel
+        nameInput.text = "";
+        passInput.text = "";
         signupPanel.Show();
     }
 
     public void OnSignupButtonClick()
     {
-        _isSignup = true;
-        Connect();
+        if (CheckSignupInputs())
+        {
+            _isSignup = true;
+            Connect();
+        }
     }
+
+    private bool CheckSignupInputs()
+    {
+        if (signupNameInput.text.Length < 3)
+        {
+            signupInfo.text = "Username should be atleast 3 chars!";
+            return false;
+        }
+        else if (signupPassInput.text.Length < 3)
+        {
+            signupInfo.text = "Password should be atleast 3 chars!";
+            return false;
+        }
+        return true;
+    }
+
     #endregion
 
     //----------------------------------------------------------
@@ -239,9 +273,15 @@ public class LoginSceneController : BaseSceneController
         }
         else
         {
-            // Show error message
-            loginInfo.text = "Connection failed; is the server running at all?";
-
+            if (_isSignup)
+            {
+                signupInfo.text = "Connection failed; is the server running at all?";
+            }
+            else
+            {
+                // Show error message
+                loginInfo.text = "Connection failed; is the server running at all?";
+            }
             // Enable user interface
             EnableUI(true);
         }
@@ -269,6 +309,8 @@ public class LoginSceneController : BaseSceneController
         {
             _sfs.Disconnect();
             _isSignup = false;
+            signupNameInput.text = "";
+            signupPassInput.text = "";
             signupPanel.Hide();
             loginInfo.text = "Successful Sign Up! Now Login with your account";
         }

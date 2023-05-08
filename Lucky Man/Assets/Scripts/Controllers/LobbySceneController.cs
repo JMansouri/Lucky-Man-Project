@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 using UnityEngine;
 using UnityEngine.UI;
@@ -11,6 +11,7 @@ using Sfs2X.Requests;
 using Sfs2X.Requests.Game;
 using Sfs2X.Entities.Data;
 using Sfs2X.Entities.Managers;
+using TMPro;
 
 /**
  * Script attached to the Controller object in the Lobby scene.
@@ -23,6 +24,7 @@ public class LobbySceneController : BaseSceneController
     // UI elements
     //----------------------------------------------------------
 
+    public TextMeshProUGUI profileText;
     public Text loggedInAsLabel;
     public UserProfilePanel userProfilePanel;
     public WarningPanel warningPanel;
@@ -31,7 +33,7 @@ public class LobbySceneController : BaseSceneController
     // Private properties
     //----------------------------------------------------------
 
-    private SmartFox sfs;    
+    private SmartFox sfs;
     private bool searchForMatch = false;
 
     //----------------------------------------------------------
@@ -52,6 +54,9 @@ public class LobbySceneController : BaseSceneController
 
         // Add event listeners
         AddSmartFoxListeners();
+
+        // Load name and score of the player:
+        LoadProfile();
     }
 
     //----------------------------------------------------------
@@ -76,6 +81,14 @@ public class LobbySceneController : BaseSceneController
     {
         sfs.Send(new JoinRoomRequest("Lobby"));
         // deactive find match button        
+    }
+
+    public void OnLeaderBoardButtonClick()
+    {
+        ISFSObject parameters = SFSObject.NewInstance();
+        sfs.Send(new ExtensionRequest("leader_board", parameters));
+        // show leader board panel
+        // wait for list of players
     }
 
     /**
@@ -129,6 +142,12 @@ public class LobbySceneController : BaseSceneController
         //warningPanel.Hide();
     }
 
+    private void LoadProfile()
+    {
+        int points = sfs.MySelf.GetVariable("rank_points").GetIntValue();
+        profileText.text = $"{sfs.MySelf.Name} عزیز _ امتیاز شما : {points}";
+    }
+
     #endregion
 
     //----------------------------------------------------------
@@ -180,6 +199,22 @@ public class LobbySceneController : BaseSceneController
             int id = responseParams.GetInt("room_id");
             Debug.Log(" Room ID : " + id + " ____ Name : " + sfs.GetRoomById(id));
             SceneManager.LoadScene("Game");
+        }
+        else if (cmd.Equals("leader_board"))
+        {
+            ISFSObject responseParams = (SFSObject)evt.Params["params"];
+            ISFSArray players = responseParams.GetSFSArray("board");
+
+            string s = "PEOPLE LIST RECEIVED:\n\n";
+
+            for (int i= 0; i < players.Count; i++)
+            {
+                ISFSObject player = players.GetSFSObject(i);
+                s += " > " + (i+1) +". "+ player.GetUtfString("name") +
+                    ", " + player.GetInt("points") + "Point \n";
+            }
+
+            Debug.Log(s);
         }
     }
 
