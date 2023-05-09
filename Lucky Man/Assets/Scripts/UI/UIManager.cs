@@ -31,6 +31,7 @@ namespace LuckyMan.Runtime
         // ui changeble images
         [SerializeField] private Image _myPointsBar;
         [SerializeField] private Image _oppPointsBar;
+        [SerializeField] private SpriteRenderer _diceGlow;
 
         // ui texts
         [SerializeField] private TextMeshProUGUI _myName;
@@ -48,6 +49,7 @@ namespace LuckyMan.Runtime
         public void EnableDiceButton(bool status)
         {
             _diceButton.enabled = status;
+            _diceGlow.gameObject.SetActive(status);
         }
 
         public void SetNames(string myName, string oppName)

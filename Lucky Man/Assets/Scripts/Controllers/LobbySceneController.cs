@@ -10,7 +10,6 @@ using Sfs2X.Entities;
 using Sfs2X.Requests;
 using Sfs2X.Requests.Game;
 using Sfs2X.Entities.Data;
-using Sfs2X.Entities.Managers;
 using TMPro;
 
 /**
@@ -28,6 +27,9 @@ public class LobbySceneController : BaseSceneController
     public Text loggedInAsLabel;
     public UserProfilePanel userProfilePanel;
     public WarningPanel warningPanel;
+    public BasePanel leaderBoardPanel;
+    public Transform leaderBoardContent;
+    public PlayerListItem playerListItemPrefab;
 
     //----------------------------------------------------------
     // Private properties
@@ -35,6 +37,8 @@ public class LobbySceneController : BaseSceneController
 
     private SmartFox sfs;
     private bool searchForMatch = false;
+    private Dictionary<int,PlayerListItem> currentLeaderBoardList = new();
+    private int leaderBoardCount = 0;
 
     //----------------------------------------------------------
     // Unity calback methods
@@ -64,23 +68,13 @@ public class LobbySceneController : BaseSceneController
     //----------------------------------------------------------
     #region
     /**
-	 * On Logout button click, disconnect from SmartFoxServer.
-	 * This causes the SmartFox listeners added by this scene to be removed (see BaseSceneController.OnDestroy method)
-	 * and the Login scene to be loaded (see GlobalManager.OnConnectionLost method).
-	 */
-    public void OnLogoutButtonClick()
-    {
-        // Disconnect from SmartFoxServer
-        sfs.Disconnect();
-    }
-
-    /**
 	 * On Start game button click, create and join a new game Room.
 	 */
     public void OnStartGameButtonClick()
     {
         sfs.Send(new JoinRoomRequest("Lobby"));
-        // deactive find match button        
+        // deactive find match button
+        // show finding match label
     }
 
     public void OnLeaderBoardButtonClick()
@@ -88,7 +82,19 @@ public class LobbySceneController : BaseSceneController
         ISFSObject parameters = SFSObject.NewInstance();
         sfs.Send(new ExtensionRequest("leader_board", parameters));
         // show leader board panel
+        leaderBoardPanel.Show();
         // wait for list of players
+    }
+
+    /**
+    * On Logout button click, disconnect from SmartFoxServer.
+    * This causes the SmartFox listeners added by this scene to be removed (see BaseSceneController.OnDestroy method)
+    * and the Login scene to be loaded (see GlobalManager.OnConnectionLost method).
+    */
+    public void OnLogoutButtonClick()
+    {
+        // Disconnect from SmartFoxServer
+        sfs.Disconnect();
     }
 
     /**
@@ -97,6 +103,11 @@ public class LobbySceneController : BaseSceneController
     public void OnUserIconClick()
     {
         userProfilePanel.Show();
+    }
+
+    public void OnReturnButtonClick()
+    {
+        leaderBoardPanel.Hide();
     }
     #endregion
 
@@ -197,7 +208,6 @@ public class LobbySceneController : BaseSceneController
         {
             ISFSObject responseParams = (SFSObject)evt.Params["params"];
             int id = responseParams.GetInt("room_id");
-            Debug.Log(" Room ID : " + id + " ____ Name : " + sfs.GetRoomById(id));
             SceneManager.LoadScene("Game");
         }
         else if (cmd.Equals("leader_board"))
@@ -205,16 +215,41 @@ public class LobbySceneController : BaseSceneController
             ISFSObject responseParams = (SFSObject)evt.Params["params"];
             ISFSArray players = responseParams.GetSFSArray("board");
 
-            string s = "PEOPLE LIST RECEIVED:\n\n";
+            ClearLeaderBoard();            
+            PopulatePlayerList(players);
+        }
+    }
 
-            for (int i= 0; i < players.Count; i++)
+    private void ClearLeaderBoard()
+    {
+        if (currentLeaderBoardList != null && currentLeaderBoardList.Count > 0)
+        {
+            for (int i = 0; i < leaderBoardCount; i++)
             {
-                ISFSObject player = players.GetSFSObject(i);
-                s += " > " + (i+1) +". "+ player.GetUtfString("name") +
-                    ", " + player.GetInt("points") + "Point \n";
+                currentLeaderBoardList.TryGetValue(i, out PlayerListItem listItem);
+                if (listItem != null)
+                {
+                    currentLeaderBoardList.Remove(i);
+                    GameObject.Destroy(listItem.gameObject);
+                }
             }
+            leaderBoardCount = 0;
+            //Debug.Log("=> Count => " + currentLeaderBoardList.Keys.Count);
+        }
+    }
 
-            Debug.Log(s);
+    private void PopulatePlayerList(ISFSArray players)
+    {
+        for (int i = 0; i < players.Count; i++)
+        {
+            ISFSObject player = players.GetSFSObject(i);
+            Debug.Log(i +") "+ player.GetUtfString("name") + " _ "+ player.GetInt("points"));
+            PlayerListItem listItem = Instantiate(playerListItemPrefab);
+            listItem.Init("" + (i + 1), player.GetUtfString("name"),
+                player.GetInt("points").ToString());
+            listItem.gameObject.transform.SetParent(leaderBoardContent, false);
+            currentLeaderBoardList.Add(i, listItem);
+            leaderBoardCount++;
         }
     }
 

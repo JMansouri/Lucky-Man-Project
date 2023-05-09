@@ -22,6 +22,7 @@ public class GameSceneController : BaseSceneController
 
     private SmartFox sfs;
     private bool runTimer;
+    private bool gameOver = false;
     private float timer = 20;
     [SerializeField] private GameManager _gameManager;
     [SerializeField] private UIManager _uiManager;
@@ -104,6 +105,7 @@ public class GameSceneController : BaseSceneController
     private void SetupGame()
     {
         _gameManager = new GameManager();
+        gameOver = false;
 
         _gameManager.MyPlayerId = sfs.MySelf.PlayerId;
         var opp = sfs.LastJoinedRoom.UserList.First(u => u.PlayerId != _gameManager.MyPlayerId);
@@ -202,7 +204,6 @@ public class GameSceneController : BaseSceneController
     private void OnExtensionResponse(BaseEvent evt)
     {
         string cmd = (string)evt.Params["cmd"];
-        Debug.Log($"--> Response command : {cmd}");
 
         if (cmd.Equals("start"))
         {
@@ -258,6 +259,7 @@ public class GameSceneController : BaseSceneController
             int lastDice = responseParams.GetInt("last_dice");
 
             TurnData data = _gameManager.UpdateState(lastDice);
+            gameOver = true;
 
             if (_gameManager.IsMyTurn())
             {
@@ -298,7 +300,13 @@ public class GameSceneController : BaseSceneController
 
         // Display system message
         if (user != sfs.MySelf)
+        {
             Debug.Log("User " + user.Name + " left the game");
+            if (!gameOver)
+            {
+                _uiManager.ShowGameOverPanel(true, "حریف از بازی بیرون رفت!");
+            }
+        }
     }
 
     private void OnTestEvents(BaseEvent evt)
